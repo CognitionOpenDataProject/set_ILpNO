@@ -1,0 +1,280 @@
+---
+title: "COD Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+#### Article ID: set_ILpNO
+#### Pilot: Sara Altman
+#### Co-pilot: Tom Hardwicke  
+#### Start date: 03-11-2017
+#### End date: 03-13-2017   
+
+-------
+
+#### Methods summary: 
+Experiment 1 examined the relationship between attended-region size and object-substituion masking. Inducer trials made up 80% of all trials. For each inducer trial, partipants responded to stimuli by determining if they were circles or ellipses. The stimuli were blocked such that they induced a small or large attended region. The remaining 20% of the trials were target trials. On half of the target trials, a four-dot mask disappeared simultaneously with the target (a circle). On the other half of the target trials, the four-dot mask disappeared 200 ms after the target disappeared. Participants were instructed to identify if the target circle had a spatial gap on its right or left side. Accuracy on all trials was recorded. 
+
+The inducer stimuli consisted of small circles and ellipses (small inducer) and large circles and ellipses (large inducer). The masks were composed of four small dots arranged in a square. Small versus large inducer was blocked, such that each participant completed all small inducer trials and then all large inducer trials, or vice versa. The inducer trials and target trials were randomly interspersed.
+
+Each testing session also began with a practice session of 20 trials.
+
+------
+
+#### Target outcomes:
+A two-by-two repeated-measures ANOVA was conducted to analyze the influence of attended-region-size (large vs. small) and mask-offset condition (simultaneous vs. delayed) on target identification accuracy. The original experimenters reported a significant main effect of attended region size ($F(1, 38) = 15.36, p < 0.001, \eta^2_p = 0.241$) and a significant main effect of mask-offset condition ($F(1, 38) = 15.36, p < 0.001, \eta^2_p = 0.288$). They found no significant interaction between attended-region-size and mask-offset condition ($F(1,38) = 0.48, p = .494, \eta^2_p = 0.012$). 
+
+------
+
+[The chunk below sets up some formatting options for the R Markdown document]
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Step 1: Load packages
+
+```{r}
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(CODreports) # custom report functions
+library(forcats)
+library(ez) # for anova
+library(stringr)
+```
+
+## Step 2: Load data
+
+```{r}
+data <- read_excel("data/data.xlsx", skip = 2, col_names = FALSE)
+```
+
+## Step 3: Tidy data
+
+The following code tidies the data such that there is one observation per row. 
+
+```{r}
+data_tidy <-
+  data %>% 
+  select(n = X0,
+         inducer_small = X1,
+         simul_small = X2,
+         delay_small = X3,
+         inducer_large = X5,
+         simul_large = X6,
+         delay_large = X7) %>% 
+  filter(n != "NA") %>% 
+  gather(key = "measure", value = "value", 2:7, convert = TRUE) %>% 
+  separate(measure, into = c("measure", "region_size"), sep = "_") %>% 
+  mutate(value = as.double(value))
+```
+
+## Step 4: Run analysis
+
+### Pre-processing
+
+The original researchers stated that they excluded one participant because they performed below chance (50%) on the task. 
+
+```{r}
+#exclude participants who were below chance
+to_exclude <-
+  data_tidy %>% 
+  filter(measure == "inducer", 
+         value < .5) %>% 
+  .$n
+
+data_tidy <-
+  data_tidy %>% 
+  filter(!(n %in% to_exclude))
+```
+
+They also stated that they re-ran their analysis after excluding any participant whose average accuracy was either below 60% or above 90%, in order to check for floor and ceiling effects at the individual level.
+
+The following code creates a separate data frame that excludes such participants. 
+
+```{r}
+floor_ceil_exclude <- 
+  data_tidy %>% 
+  filter(measure != "inducer") %>% 
+  group_by(n) %>% 
+  summarise(average = mean(value, na.rm = TRUE)) %>% 
+  filter(average > .9 | average < .6) %>% 
+  .$n
+
+data_tidy_fc <-
+  data_tidy %>% 
+  filter(!(n %in% floor_ceil_exclude))
+```
+
+### Descriptive statistics
+
+The original paper reported the mean inducer identification accuracy for both small and large inducers:
+
+> For the remaining 39 participants, inducer identification accuracy was high (96% for the small inducers and 97% for the large inducers).
+
+The following code reproduces this analysis:
+
+```{r}
+accuracy <-
+  data_tidy %>%
+  filter(measure == "inducer") %>% 
+  group_by(region_size) %>% 
+  summarise(accuracy = mean(value, na.rm = TRUE)) %>% 
+  .$accuracy
+```
+
+I found that mean inducer identification accuracy was `r accuracy[1]` for large inducers and `r accuracy[2]` for small inducers, confirming their calculations.
+
+The original paper included a plot of target identification accuracy by condition: 
+
+![](http://web.stanford.edu/~skaltman/figure_5.png)
+
+The error bars were corrected for repeated-meaures designs by using the strategy outlined in [Cousineau (2005)](http://www.tqmp.org/RegularArticles/vol01-1/p042/p042.pdf).
+
+This chunk recreates the above plot:
+
+```{r}
+#group data by measure and region for plotting
+grouped_data <-
+  data_tidy %>% 
+  filter(measure != "inducer") %>% 
+  mutate(measure = fct_rev(measure)) %>% 
+  group_by(region_size, measure) %>% 
+  summarise(accuracy = mean(value, na.rm = TRUE)) %>% 
+  ungroup() 
+
+#average by subject to make the corrections for the error bars, as done in the original plot
+avg_by_subject <-
+  data_tidy %>% 
+  filter(measure != "inducer") %>% 
+  group_by(n) %>% 
+  summarise(avg = mean(value, na.rm = TRUE))
+
+#grand average for corrections
+grand_avg <- mean(avg_by_subject$avg, na.rm = TRUE)
+
+#create tibble for error bars
+for_error_bars <-
+  data_tidy %>% 
+  filter(measure != "inducer") %>% 
+  left_join(avg_by_subject, by = "n") %>% 
+  mutate(value = value - avg + grand_avg) %>% 
+  group_by(measure, region_size) %>% 
+  summarise(se = sd(value) / sqrt(n())) %>% 
+  left_join(grouped_data, by = c("region_size", "measure")) %>% 
+  mutate(y_min = accuracy - ((1.96 * se)/2), y_max = accuracy + ((1.96 * se)/2))
+
+#construct plot
+grouped_data %>% 
+  ggplot(aes(measure, accuracy)) +
+  geom_line(aes(linetype = region_size, group = region_size)) +
+  geom_point(aes(shape = region_size)) +
+  geom_linerange(aes(ymin = y_min, ymax = y_max), size = .5, data = for_error_bars) +
+  labs(y = "Target identification accuracy (% correct)",
+       x = "Mask Offset Condition") +
+  scale_x_discrete(labels = c("Simul (0)", "Delay (200)")) +
+  scale_y_continuous(breaks = seq(.5, .85, by = .05), labels = function(x) {return(x*100)}) +
+  coord_cartesian(ylim = c(.5, .85)) +
+  theme_classic() +
+  theme(aspect.ratio = 2)
+```
+
+The plots appear identical. 
+
+### Inferential statistics
+
+The original authors conducted a two-way repeated measures ANOVA:
+
+> Target identification accuracy data for the remaining 39 partici- pants were submitted to a 2 (attended-region-size: small versus large) 2 (mask offset condition: simultaneous versus delayed) repeated-measures ANOVA. 
+
+The following chunk runs this 2-by-2 repeated-measures ANOVA:
+
+```{r}
+for_anova <-
+  data_tidy %>% 
+  filter(measure != "inducer")
+
+aov <- ezANOVA(data = for_anova, dv = value, wid = n, 
+               within = .(measure, region_size), detailed = TRUE) 
+        
+```
+
+The following is the report of the original findings:
+
+> This revealed a significant main effect of attended-region size, F(1, 38) = 12.10, p = 0.001, g2p = 0.241, such that accuracy was higher in the small size versus large condition. This demonstrates that the manipulation of attended-region size was successful. There was a significant main effect of mask-offset condition, F(1, 38) = 15.36, p < 0.001, g2p = 0.288, whereby target identification was greater on the simultaneous than on the delayed mask-offset trials. This demonstrates the presence of OSM. How- ever, there was no reliable interaction between attended- region-size and mask-offset condition, F(1,38)=0.48, p=0.494, g2p = 0.012. This tells us that the effect of mask offset condition on target identification was unchanged by attended-region size.
+
+This chunk reproduces these summary statistics for the two-by-two anova conducted above:
+
+```{r}
+#unlists the anova object so that values can be retrieved
+unlisted <- unlist(aov)
+
+#creates a tibble (data frame) for the anova stats we care about
+aov_stats <- 
+  tibble(
+    effect = c("condition", "region_size", "measure:region_size"),
+    F = c(as.double(unlisted["ANOVA.F2"]), as.double(unlisted["ANOVA.F3"]), as.double(unlisted["ANOVA.F4"])), 
+    p = c(as.double(unlisted["ANOVA.p2"]), as.double(unlisted["ANOVA.p3"]), as.double(unlisted["ANOVA.p4"])),
+    SSn = c(as.double(unlisted["ANOVA.SSn2"]), as.double(unlisted["ANOVA.SSn3"]), as.double(unlisted["ANOVA.SSn4"])),
+    SSd = c(as.double(unlisted["ANOVA.SSd2"]), as.double(unlisted["ANOVA.SSd3"]), as.double(unlisted["ANOVA.SSd4"]))
+  ) %>% 
+  mutate(partial_eta_squared = SSn / (SSn + SSd)) %>% 
+  select(-SSn, -SSd) 
+
+knitr::kable(aov_stats)
+```
+
+The authors also redid the two-by-two repeated-measures ANOVA after excluding all participants whose average accuracy was either below 60% or above 90%, as stated in the pre-processing section. The original text is as follows:
+
+> While these group means are well clear of ceiling or floor, to confirm that the present results were not a consequence of floor or ceiling effects at the individual level, we repeated the analysis excluding participants whose average target identification accuracy fell below 60% or exceeded 90%. The results with the remaining 27 datasets were equivalent: a main effect of attended- region size (p = 0.012, g2p = 0.218), a main effect of mask-offset condition (p = 0.006, g2p = 0.257), and no interaction (p = 0.312, g2p = 0.039). This indicates that the results were not a product of floor or ceiling effects.
+
+This chunk reproduces that analysis:
+
+```{r}
+for_anova_fc <-
+  data_tidy_fc %>% 
+  filter(measure != "inducer")
+
+aov_fc <- ezANOVA(data = for_anova_fc, dv = value, wid = n,
+               within = .(measure, region_size), detailed = TRUE)
+
+unlisted_fc <- unlist(aov_fc)
+
+aov_stats_fc <- tibble(
+  effect = c("condition", "region_size", "measure:region_size"),
+  F = c(as.double(unlisted_fc["ANOVA.F2"]), as.double(unlisted_fc["ANOVA.F3"]), as.double(unlisted_fc["ANOVA.F4"])), 
+  p = c(as.double(unlisted_fc["ANOVA.p2"]), as.double(unlisted_fc["ANOVA.p3"]), as.double(unlisted_fc["ANOVA.p4"])),
+  SSn = c(as.double(unlisted_fc["ANOVA.SSn2"]), as.double(unlisted_fc["ANOVA.SSn3"]), as.double(unlisted_fc["ANOVA.SSn4"])),
+  SSd = c(as.double(unlisted_fc["ANOVA.SSd2"]), as.double(unlisted_fc["ANOVA.SSd3"]), as.double(unlisted_fc["ANOVA.SSd4"]))
+) %>% 
+  mutate(partial_eta_squared = SSn / (SSn + SSd)) %>% 
+  select(-SSn, -SSd)
+
+knitr::kable(aov_stats_fc)
+```
+
+
+## Step 5: Conclusion
+
+The reproduction was a success. I was able to reproduce the reported analyses and did not find any errors in the origional paper.
+
+```{r}
+codReport(Report_Type = 'pilot',
+          Article_ID = 'set_ILpNO', 
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 0, 
+          Minor_Numerical_Errors = 0)
+```
+
+
+
+[This function will output information about the package versions used in this report:]
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
