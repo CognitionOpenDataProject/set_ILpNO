@@ -8,7 +8,6 @@ output:
 
 #### Article ID: set_ILpNO
 #### Pilot: Sara Altman
-#### Co-pilot: Tom Hardwicke  
 #### Start date: 03-11-2017
 #### End date: 03-13-2017   
 
