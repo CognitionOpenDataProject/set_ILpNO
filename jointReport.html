@@ -444,7 +444,7 @@ knitr::kable(aov_stats)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>The authors also redid the two-by-two repeated-measures ANOVA after excluding all participants whose average accuracy was either below 60% or above 90%, as stated in the pre-processing section. The original text is as follows:</p>
+<p>The authors also ran another two-by-two repeated-measures ANOVA after excluding all participants whose average accuracy was either below 60% or above 90%, as stated in the pre-processing section. The original text is as follows:</p>
 <blockquote>
 <p>While these group means are well clear of ceiling or floor, to confirm that the present results were not a consequence of floor or ceiling effects at the individual level, we repeated the analysis excluding participants whose average target identification accuracy fell below 60% or exceeded 90%. The results with the remaining 27 datasets were equivalent: a main effect of attended- region size (p = 0.012, g2p = 0.218), a main effect of mask-offset condition (p = 0.006, g2p = 0.257), and no interaction (p = 0.312, g2p = 0.039). This indicates that the results were not a product of floor or ceiling effects.</p>
 </blockquote>
@@ -503,8 +503,8 @@ knitr::kable(aov_stats_fc)</code></pre>
 </div>
 <div id="step-5-conclusion" class="section level2">
 <h2>Step 5: Conclusion</h2>
-<p>The reproduction was a success. I was able to reproduce the reported analyses and did not find any errors in the origional paper.</p>
-<pre class="r"><code>codReport(Report_Type = 'pilot',
+<p>The reproduction was a success. I was able to reproduce the reported analyses and did not find any errors in the original paper.</p>
+<pre class="r"><code>codReport(Report_Type = 'joint',
           Article_ID = 'set_ILpNO', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
@@ -530,7 +530,7 @@ knitr::kable(aov_stats_fc)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>[This function will output information about the package versions used in this report:]</p>
+<p>This function will output information about the package versions used in this report:</p>
 <pre class="r"><code>devtools::session_info()</code></pre>
 <pre><code>##  setting  value                       
 ##  version  R version 3.3.2 (2016-10-31)

@@ -266,7 +266,7 @@ knitr::kable(aov_stats_fc)
 The reproduction was a success. I was able to reproduce the reported analyses and did not find any errors in the original paper.
 
 ```{r}
-codReport(Report_Type = 'pilot',
+codReport(Report_Type = 'joint',
           Article_ID = 'set_ILpNO', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
