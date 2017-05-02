@@ -58,13 +58,13 @@ The following code tidies the data such that there is one observation per row.
 ```{r}
 data_tidy <-
   data %>% 
-  select(n = X0,
-         inducer_small = X1,
-         simul_small = X2,
-         delay_small = X3,
-         inducer_large = X5,
-         simul_large = X6,
-         delay_large = X7) %>% 
+  select(n = X__1,
+         inducer_small = X__2,
+         simul_small = X__3,
+         delay_small = X__4,
+         inducer_large = X__6,
+         simul_large = X__7,
+         delay_large = X__8) %>% 
   filter(n != "NA") %>% 
   gather(key = "measure", value = "value", 2:7, convert = TRUE) %>% 
   separate(measure, into = c("measure", "region_size"), sep = "_") %>% 
@@ -271,7 +271,8 @@ codReport(Report_Type = 'joint',
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
           Major_Numerical_Errors = 0, 
-          Minor_Numerical_Errors = 0)
+          Minor_Numerical_Errors = 0,
+          Author_Assistance = F)
 ```
 
 This function will output information about the package versions used in this report:
