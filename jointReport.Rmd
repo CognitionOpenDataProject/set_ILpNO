@@ -267,7 +267,7 @@ The reproduction was a success. I was able to reproduce the reported analyses an
 
 ```{r}
 codReport(Report_Type = 'joint',
-          Article_ID = 'set_ILpNO', 
+          Article_ID = 'ILpNO', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
           Major_Numerical_Errors = 0, 
