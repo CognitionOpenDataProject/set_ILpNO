@@ -9,8 +9,10 @@ output:
 #### Article ID: set_ILpNO
 #### Pilot: Sara Altman
 #### Co-pilot: Tom Hardwicke  
-#### Start date: 03-11-2017
-#### End date: 03-17-2017   
+#### Start date: Mar 11 2017
+#### End date: Mar 17 2017
+#### Final verification: Tom Hardwicke
+#### Date: Nov 9 2017
 
 -------
 
@@ -29,7 +31,10 @@ A two-by-two repeated-measures ANOVA was conducted to analyze the influence of a
 ------
 
 ```{r global_options, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+
+# prepare an empty report object, we will update this each time we run compareValues2()
+reportObject <- data.frame("Article_ID" = NA, "valuesChecked" = 0, "eyeballs" = 0, "Total_df" = 0, "Total_p" = 0, "Total_mean" = 0, "Total_sd" = 0, "Total_se" = 0, "Total_ci" = 0, "Total_bf" = 0, "Total_t" = 0, "Total_F" = 0, "Total_es" = 0, "Total_median" = 0, "Total_irr" = 0, "Total_r" = 0, "Total_z" = 0, "Total_coeff" = 0, "Total_n" = 0, "Total_x2" = 0, "Total_other" = 0, "Insufficient_Information_Errors" = 0, "Decision_Errors" = 0, "Major_Numerical_Errors" = 0, "Minor_Numerical_Errors" = 0, "Major_df" = 0, "Major_p" = 0, "Major_mean" = 0, "Major_sd" = 0, "Major_se" = 0, "Major_ci" = 0, "Major_bf" = 0, "Major_t" = 0, "Major_F" = 0, "Major_es" = 0, "Major_median" = 0, "Major_irr" = 0, "Major_r" = 0, "Major_z" = 0, "Major_coeff" = 0, "Major_n" = 0, "Major_x2" = 0, "Major_other" = 0, "affectsConclusion" = NA, "error_typo" = 0, "error_specification" = 0, "error_analysis" = 0, "error_data" = 0, "error_unidentified" = 0, "Author_Assistance" = NA, "resolved_typo" = 0, "resolved_specification" = 0, "resolved_analysis" = 0, "resolved_data" = 0, "correctionSuggested" = NA, "correctionPublished" = NA)
 ```
 
 ## Step 1: Load packages
@@ -128,11 +133,15 @@ accuracy <-
   .$accuracy
 ```
 
+```{r}
+reportObject <- compareValues2(reportedValue = "97", obtainedValue = accuracy[1]*100, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "96", obtainedValue = accuracy[2]*100, valueType = 'mean')
+```
 I found that mean inducer identification accuracy was `r accuracy[1]` for large inducers and `r accuracy[2]` for small inducers, confirming their calculations.
 
 The original paper included a plot of target identification accuracy by condition: 
 
-![](http://web.stanford.edu/~skaltman/figure_5.png)
+![](images/figure_5.png)
 
 The error bars were corrected for repeated-meaures designs by using the strategy outlined in [Cousineau (2005)](http://www.tqmp.org/RegularArticles/vol01-1/p042/p042.pdf).
 
@@ -186,6 +195,28 @@ grouped_data %>%
 
 The plots appear identical. 
 
+```{r}
+m <- grouped_data %>% filter(region_size == 'large', measure == 'simul') %>% pull(accuracy)
+se <- for_error_bars %>% filter(region_size == 'large', measure == 'simul') %>% pull(se)
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = se, valueType = 'se')
+
+m <- grouped_data %>% filter(region_size == 'large', measure == 'delay') %>% pull(accuracy)
+se <- for_error_bars %>% filter(region_size == 'large', measure == 'delay') %>% pull(se)
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = se, valueType = 'se')
+
+m <- grouped_data %>% filter(region_size == 'small', measure == 'simul') %>% pull(accuracy)
+se <- for_error_bars %>% filter(region_size == 'small', measure == 'simul') %>% pull(se)
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = se, valueType = 'se')
+
+m <- grouped_data %>% filter(region_size == 'small', measure == 'delay') %>% pull(accuracy)
+se <- for_error_bars %>% filter(region_size == 'small', measure == 'delay') %>% pull(se)
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = se, valueType = 'se')
+```
+
 ### Inferential statistics
 
 The original authors conducted a two-way repeated measures ANOVA:
@@ -215,7 +246,7 @@ This chunk reproduces these summary statistics for the two-by-two anova conducte
 ```{r}
 #unlists the anova object so that values can be retrieved
 unlisted <- unlist(aov)
-
+aov
 #creates a tibble (data frame) for the anova stats we care about
 aov_stats <- 
   tibble(
@@ -229,6 +260,49 @@ aov_stats <-
   select(-SSn, -SSd) 
 
 knitr::kable(aov_stats)
+```
+
+Run explicit comparisons:
+
+> main effect of attended-region size, F(1, 38) = 12.10, p = 0.001, g2p = 0.241, 
+
+```{r}
+F1 <- aov_stats %>% filter(effect == 'region_size') %>% pull('F')
+p <- aov_stats %>% filter(effect == 'region_size') %>% pull('p')
+pes <- aov_stats %>% filter(effect == 'region_size') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "1", obtainedValue = 1, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "38", obtainedValue = 38, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "12.10", obtainedValue = F1, valueType = 'F')
+reportObject <- compareValues2(reportedValue = "0.001", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.241", obtainedValue = pes, valueType = 'es')
+```
+
+> main effect of mask-offset condition, F(1, 38) = 15.36, p < 0.001, g2p = 0.288
+
+```{r}
+F1 <- aov_stats %>% filter(effect == 'condition') %>% pull('F')
+p <- aov_stats %>% filter(effect == 'condition') %>% pull('p')
+pes <- aov_stats %>% filter(effect == 'condition') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "1", obtainedValue = 1, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "38", obtainedValue = 38, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "15.36", obtainedValue = F1, valueType = 'F')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.288", obtainedValue = pes, valueType = 'es')
+```
+> o reliable interaction between attended- region-size and mask-offset condition, F(1,38)=0.48, p=0.494, g2p = 0.012.
+
+```{r}
+F1 <- aov_stats %>% filter(effect == 'measure:region_size') %>% pull('F')
+p <- aov_stats %>% filter(effect == 'measure:region_size') %>% pull('p')
+pes <- aov_stats %>% filter(effect == 'measure:region_size') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "1", obtainedValue = 1, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "38", obtainedValue = 38, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "0.48", obtainedValue = F1, valueType = 'F')
+reportObject <- compareValues2(reportedValue = "0.494", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.012", obtainedValue = pes, valueType = 'es')
 ```
 
 The authors also ran another two-by-two repeated-measures ANOVA after excluding all participants whose average accuracy was either below 60% or above 90%, as stated in the pre-processing section. The original text is as follows:
@@ -260,22 +334,82 @@ aov_stats_fc <- tibble(
 knitr::kable(aov_stats_fc)
 ```
 
+> a main effect of attended- region size (p = 0.012, g2p = 0.218), a main effect of mask-offset condition (p = 0.006, g2p = 0.257), and no interaction (p = 0.312, g2p = 0.039).
+
+```{r}
+p <- aov_stats_fc %>% filter(effect == 'region_size') %>% pull('p')
+pes <- aov_stats_fc %>% filter(effect == 'region_size') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "0.012", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.218", obtainedValue = pes, valueType = 'es')
+
+p <- aov_stats_fc %>% filter(effect == 'condition') %>% pull('p')
+pes <- aov_stats_fc %>% filter(effect == 'condition') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "0.006", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.257", obtainedValue = pes, valueType = 'es')
+
+p <- aov_stats_fc %>% filter(effect == 'measure:region_size') %>% pull('p')
+pes <- aov_stats_fc %>% filter(effect == 'measure:region_size') %>% pull('partial_eta_squared')
+
+reportObject <- compareValues2(reportedValue = "0.312", obtainedValue = p, valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.039", obtainedValue = pes, valueType = 'es')
+```
 
 ## Step 5: Conclusion
 
 The reproduction was a success. I was able to reproduce the reported analyses and did not find any errors in the original paper.
 
 ```{r}
-codReport(Report_Type = 'joint',
-          Article_ID = 'ILpNO', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 0, 
-          Major_Numerical_Errors = 0, 
-          Minor_Numerical_Errors = 0,
-          Author_Assistance = F)
+reportObject$Article_ID <- "ILpNO"
+reportObject$affectsConclusion <- NA
+reportObject$error_typo <- 0
+reportObject$error_specification <- 0
+reportObject$error_analysis <- 0
+reportObject$error_data <- 0
+reportObject$error_unidentified <- 0
+reportObject$Author_Assistance <- F
+reportObject$resolved_typo <- 0
+reportObject$resolved_specification <- 0
+reportObject$resolved_analysis <- 0
+reportObject$resolved_data <- 0
+reportObject$correctionSuggested <- NA
+reportObject$correctionPublished <- NA
+
+# decide on final outcome
+if(reportObject$Decision_Errors > 0 | reportObject$Major_Numerical_Errors > 0 | reportObject$Insufficient_Information_Errors > 0){
+  reportObject$finalOutcome <- "Failure"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  reportObject$finalOutcome <- "Success"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Success with author assistance"
+  }
+}
+
+# save the report object
+filename <- paste0("reportObject_", reportObject$Article_ID,".csv")
+write_csv(reportObject, filename)
 ```
 
-This function will output information about the package versions used in this report:
+## Report Object
+
+```{r, echo = FALSE}
+# display report object in chunks
+kable(reportObject[2:10], align = 'l')
+kable(reportObject[11:20], align = 'l')
+kable(reportObject[21:25], align = 'l')
+kable(reportObject[26:30], align = 'l')
+kable(reportObject[31:35], align = 'l')
+kable(reportObject[36:40], align = 'l')
+kable(reportObject[41:45], align = 'l')
+kable(reportObject[46:51], align = 'l')
+kable(reportObject[52:57], align = 'l')
+```
+
+## Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
